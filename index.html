@@ -1,0 +1,372 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Slarve Benoit · Software Engineer</title>
+<meta name="description" content="Slarve Benoit builds software products end to end: native iOS and Android apps and AI products running in production.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --paper: #f5f3ee; --ink: #171614; --body: #3b3934; --muted: #77736a; --rule: #dcd8cf;
+    --accent: #1e5b47; --card: #ecE9e1;
+    --serif: "Instrument Serif", Georgia, serif;
+    --sans: Inter, system-ui, -apple-system, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  html { background: var(--paper); scroll-behavior: smooth; -webkit-text-size-adjust: 100%; }
+  body { margin: 0; background: var(--paper); color: var(--body); font: 17px/1.7 var(--sans); -webkit-font-smoothing: antialiased; }
+  ::selection { background: var(--accent); color: var(--paper); }
+  a { color: inherit; }
+  a:focus-visible { outline: 2px solid var(--accent); outline-offset: 4px; border-radius: 2px; }
+  .wrap { max-width: 1120px; margin: 0 auto; padding: 0 40px; }
+  .label { font: 500 .78rem/1.4 var(--sans); letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+
+  /* Header */
+  .top { display: flex; justify-content: space-between; align-items: baseline; padding: 32px 0; border-bottom: 1px solid var(--rule); }
+  .wordmark { font: 400 1.6rem/1 var(--serif); color: var(--ink); text-decoration: none; letter-spacing: -.01em; }
+  .top nav { display: flex; gap: 28px; font-size: .95rem; }
+  .top nav a { text-decoration: none; color: var(--muted); }
+  .top nav a:hover { color: var(--ink); }
+
+  /* Hero */
+  .hero { padding: 104px 0 88px; }
+  .hero h1 { margin: 0; max-width: 940px; font: 400 clamp(2.6rem, 6vw, 4.9rem)/1.04 var(--serif); letter-spacing: -.02em; color: var(--ink); }
+  .hero h1 em { color: var(--accent); }
+  .hero-meta { display: flex; flex-wrap: wrap; gap: 8px 40px; margin-top: 40px; font-size: .95rem; color: var(--muted); }
+  .hero-meta a { color: var(--ink); text-underline-offset: 4px; text-decoration-color: var(--rule); }
+  .hero-meta a:hover { text-decoration-color: var(--accent); }
+
+  /* Index */
+  .index { border-top: 1px solid var(--ink); }
+  .index-head { display: flex; justify-content: space-between; padding: 16px 0; border-bottom: 1px solid var(--rule); }
+  .index a.row { display: grid; grid-template-columns: 64px 1.1fr 2fr 90px; align-items: baseline; gap: 24px; padding: 22px 0; border-bottom: 1px solid var(--rule); text-decoration: none; transition: padding .25s ease; }
+  .index a.row:hover { padding-left: 10px; }
+  .row .n { font-size: .9rem; color: var(--muted); font-variant-numeric: tabular-nums; }
+  .row .t { font: 400 1.9rem/1.1 var(--serif); color: var(--ink); }
+  .row:hover .t { color: var(--accent); }
+  .row .d { color: var(--muted); font-size: .98rem; }
+  .row .y { text-align: right; color: var(--muted); font-size: .9rem; font-variant-numeric: tabular-nums; }
+
+  /* Case studies */
+  .case { padding: 120px 0 40px; }
+  .case + .case { border-top: 1px solid var(--rule); margin-top: 80px; }
+  .case-head { display: grid; grid-template-columns: 1fr 2fr; gap: 40px; align-items: end; margin-bottom: 40px; }
+  .case-head h2 { margin: 8px 0 0; font: 400 clamp(3rem, 6.5vw, 5.4rem)/.95 var(--serif); letter-spacing: -.025em; color: var(--ink); }
+  .lede { margin: 0; font: 400 clamp(1.25rem, 2vw, 1.55rem)/1.4 var(--serif); color: var(--ink); }
+  .facts { display: grid; grid-template-columns: repeat(4, 1fr); border-top: 1px solid var(--rule); border-bottom: 1px solid var(--rule); margin: 0 0 48px; }
+  .facts div { padding: 16px 20px 18px 0; }
+  .facts div + div { padding-left: 20px; border-left: 1px solid var(--rule); }
+  .facts dt { font: 500 .74rem/1.4 var(--sans); letter-spacing: .08em; text-transform: uppercase; color: var(--muted); margin-bottom: 4px; }
+  .facts dd { margin: 0; color: var(--ink); font-size: .98rem; }
+  .facts a { text-underline-offset: 3px; text-decoration-color: var(--rule); }
+  .facts a:hover { text-decoration-color: var(--accent); }
+
+  figure { margin: 0 0 56px; }
+  figure img { display: block; width: 100%; border-radius: 6px; }
+  figure.framed img { border: 1px solid var(--rule); }
+  figcaption { margin-top: 12px; font-size: .88rem; color: var(--muted); }
+  figcaption a { color: var(--ink); text-underline-offset: 3px; }
+  .stack-imgs { display: grid; gap: 16px; }
+  .narrow img { max-width: 460px; }
+
+  .section { display: grid; grid-template-columns: 1fr 2fr; gap: 40px; padding: 28px 0; border-top: 1px solid var(--rule); }
+  .section:last-of-type { border-bottom: 1px solid var(--rule); }
+  .section h3 { margin: 4px 0 0; font: 500 .78rem/1.4 var(--sans); letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+  .section p { margin: 0 0 14px; max-width: 660px; }
+  .section p:last-child { margin-bottom: 0; }
+
+  .notes { margin: 0; max-width: 660px; }
+  .notes div { padding: 0 0 16px; }
+  .notes div + div { padding-top: 16px; border-top: 1px solid var(--rule); }
+  .notes dt { color: var(--ink); font-weight: 600; margin-bottom: 2px; }
+  .notes dd { margin: 0; }
+
+  .flow { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px; font-size: .95rem; color: var(--ink); max-width: 660px; }
+  .flow span { padding: 6px 12px; border: 1px solid var(--rule); border-radius: 4px; background: var(--card); }
+  .flow i { font-style: normal; color: var(--accent); padding: 0; border: 0; background: none; }
+
+  .video { position: relative; aspect-ratio: 16 / 9; border-radius: 6px; overflow: hidden; background: #000; }
+  .video iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
+
+  .split { display: grid; grid-template-columns: 1fr 1fr; gap: 32px; max-width: 660px; }
+  .split strong { display: block; color: var(--ink); font-weight: 600; margin-bottom: 4px; }
+
+  .built-with { color: var(--muted); }
+  .case-links { display: flex; flex-wrap: wrap; gap: 10px 32px; margin-top: 32px; }
+  .case-links a { color: var(--ink); font-weight: 500; text-decoration: none; border-bottom: 1px solid var(--rule); padding-bottom: 2px; transition: border-color .2s, color .2s; }
+  .case-links a:hover { color: var(--accent); border-color: var(--accent); }
+
+  /* Contact */
+  .contact { margin-top: 120px; padding: 96px 0 104px; border-top: 1px solid var(--ink); display: grid; grid-template-columns: 1fr 2fr; gap: 40px; }
+  .contact h2 { margin: 0 0 24px; font: 400 clamp(2.4rem, 5vw, 4rem)/1 var(--serif); color: var(--ink); letter-spacing: -.02em; }
+  .contact .email { font: 400 clamp(1.4rem, 2.6vw, 2rem)/1.2 var(--serif); color: var(--accent); text-underline-offset: 6px; text-decoration-thickness: 1px; word-break: break-word; }
+  .contact .more { margin-top: 28px; display: flex; flex-wrap: wrap; gap: 10px 32px; }
+  .contact .more a { color: var(--ink); text-decoration: none; border-bottom: 1px solid var(--rule); padding-bottom: 2px; }
+  .contact .more a:hover { border-color: var(--accent); color: var(--accent); }
+
+  footer { display: flex; justify-content: space-between; padding: 24px 0 40px; border-top: 1px solid var(--rule); font-size: .88rem; color: var(--muted); }
+
+  @media (max-width: 860px) {
+    .wrap { padding: 0 16px; }
+    .hero { padding: 64px 0 56px; }
+    .index a.row { grid-template-columns: 36px 1fr 56px; gap: 12px; }
+    .row .d { grid-column: 2 / 4; grid-row: 2; margin-top: -6px; }
+    .row .t { font-size: 1.6rem; }
+    .case { padding-top: 80px; }
+    .case + .case { margin-top: 40px; }
+    .case-head, .section, .contact { grid-template-columns: 1fr; gap: 12px; }
+    .facts { grid-template-columns: 1fr 1fr; }
+    .facts div:nth-child(3) { padding-left: 0; border-left: 0; }
+    .facts div:nth-child(n+3) { border-top: 1px solid var(--rule); }
+    .split { grid-template-columns: 1fr; gap: 20px; }
+    .contact { margin-top: 72px; padding: 64px 0; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="top">
+  <a class="wordmark" href="#">Slarve Benoit</a>
+  <nav><a href="#work">Work</a><a href="#contact">Contact</a></nav>
+</header>
+
+<section class="hero">
+  <h1>Software engineer building products end to end, from <em>native mobile apps</em> to <em>AI systems</em> running in production.</h1>
+  <div class="hero-meta">
+    <span>Writing software since 2018</span>
+    <a href="https://github.com/CodeBen98">github.com/CodeBen98</a>
+    <a href="https://github.com/SlarveFS">github.com/SlarveFS (earlier work)</a>
+  </div>
+</section>
+
+<section class="index" id="work">
+  <div class="index-head label"><span>Selected work</span><span>Year</span></div>
+  <a class="row" href="#shopdesk"><span class="n">01</span><span class="t">ShopDesk</span><span class="d">AI phone receptionist for local businesses</span><span class="y">2026</span></a>
+  <a class="row" href="#flavorful"><span class="n">02</span><span class="t">Flavorful</span><span class="d">Recipe app, built natively for iOS and Android</span><span class="y">2021</span></a>
+  <a class="row" href="#resumematch"><span class="n">03</span><span class="t">ResumeMatch</span><span class="d">Free AI resume builder and job-match analyzer</span><span class="y">2026</span></a>
+  <a class="row" href="#shiftsense"><span class="n">04</span><span class="t">ShiftSense</span><span class="d">Shift and tip tracking for service workers, on iPhone</span><span class="y">2026</span></a>
+  <a class="row" href="#tictactoe"><span class="n">05</span><span class="t">Tic-Tac-Toe</span><span class="d">SwiftUI game against a computer opponent</span><span class="y">2023</span></a>
+</section>
+
+<!-- 01 ShopDesk -->
+<article class="case" id="shopdesk">
+  <div class="case-head">
+    <div><span class="label">01</span><h2>ShopDesk</h2></div>
+    <p class="lede">An AI receptionist that answers a local business's calls, books appointments onto the owner's calendar, and logs every call in a dashboard.</p>
+  </div>
+  <dl class="facts">
+    <div><dt>Year</dt><dd>2026</dd></div>
+    <div><dt>Platform</dt><dd>Web, voice, telephony</dd></div>
+    <div><dt>History</dt><dd>~300 commits over 6 months</dd></div>
+    <div><dt>Status</dt><dd><a href="https://shopdesk.site">Live at shopdesk.site</a></dd></div>
+  </dl>
+  <figure class="framed">
+    <a href="https://shopdesk.site"><img src="media/shopdesk-site.jpg" alt="The ShopDesk website: When your business can't answer, ShopDesk does." loading="lazy"></a>
+  </figure>
+
+  <div class="section">
+    <h3>The problem</h3>
+    <div><p>Auto shops, HVAC companies, plumbers and salons lose jobs every day to missed calls. The owner is under a car, on a roof, or with a client. Voicemail doesn't convert, and a human answering service is expensive.</p></div>
+  </div>
+  <div class="section">
+    <h3>What I built</h3>
+    <div>
+      <p>A product a business owner can set up in a few minutes. ShopDesk reads their website or Google Business Profile, gives them a local phone number, and puts an AI receptionist on it.</p>
+      <p>The receptionist answers questions, books appointments straight onto the owner's Google Calendar, and transfers urgent calls. Every call, booking and customer shows up in the owner's dashboard.</p>
+    </div>
+  </div>
+  <div class="section">
+    <h3>How a booking works</h3>
+    <div class="flow">
+      <span>Caller</span><i>→</i><span>Twilio number</span><i>→</i><span>Vapi voice agent</span><i>→</i><span>Booking service</span><i>→</i><span>Google Calendar and database</span><i>→</i><span>SMS and email confirmations</span>
+    </div>
+  </div>
+  <div class="section">
+    <h3>Engineering</h3>
+    <dl class="notes">
+      <div><dt>Structured AI onboarding</dt><dd>The business's site or Google profile is scraped, and Claude turns it into a business profile. A Zod schema validates the output, so a bad model response never reaches the database.</dd></div>
+      <div><dt>Prompt-injection hardening</dt><dd>Everything an owner types is length-limited and sanitized before it reaches the voice agent's prompt, with unit tests covering it.</dd></div>
+      <div><dt>Security and multi-tenancy</dt><dd>Webhooks are HMAC-signed, checked in constant time, and fail closed. Row-level security covers every table, and every call, booking and message is tied to the business that owns the assistant.</dd></div>
+      <div><dt>Scheduling in a live call</dt><dd>The booking service turns phrases like "Thursday at noon" into a real calendar slot while the caller is still on the line.</dd></div>
+      <div><dt>Quality</dt><dd>TypeScript strict mode, ESLint, Vitest and pytest suites, and GitHub Actions CI on both repositories.</dd></div>
+    </dl>
+  </div>
+  <div class="section">
+    <h3>Built with</h3>
+    <p class="built-with">Next.js, React, TypeScript, Tailwind CSS, Supabase (Postgres), Python and FastAPI, Claude API, Vapi, Twilio, Google Calendar API, Vercel and Render.</p>
+  </div>
+  <div class="case-links">
+    <a href="https://shopdesk.site">Visit shopdesk.site ↗</a>
+    <a href="https://github.com/CodeBen98/shopdesk-dashboard">Dashboard code ↗</a>
+    <a href="https://github.com/CodeBen98/shopdesk-booking">Booking service code ↗</a>
+  </div>
+</article>
+
+<!-- 02 Flavorful -->
+<article class="case" id="flavorful">
+  <div class="case-head">
+    <div><span class="label">02</span><h2>Flavorful</h2></div>
+    <p class="lede">A recipe app for home cooks and culinary students, planned from a 44-page product plan and built natively for both iPhone and Android.</p>
+  </div>
+  <dl class="facts">
+    <div><dt>Year</dt><dd>2021</dd></div>
+    <div><dt>Platform</dt><dd>iOS (Swift), Android (Java)</dd></div>
+    <div><dt>History</dt><dd>50+ commits, March to May</dd></div>
+    <div><dt>Backend</dt><dd>Firebase</dd></div>
+  </dl>
+  <figure>
+    <div class="video">
+      <iframe src="https://www.youtube-nocookie.com/embed/gKPjZ3CG6h0" title="Flavorful beta walkthrough" loading="lazy" allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+    </div>
+    <figcaption>Beta walkthrough of the iOS app, 2021. <a href="https://youtu.be/gKPjZ3CG6h0">Watch on YouTube</a> or see the <a href="https://www.youtube.com/watch?v=y3RXJ_BY5As">release candidate presentation</a>.</figcaption>
+  </figure>
+
+  <div class="section">
+    <h3>The problem</h3>
+    <div><p>Home cooks and culinary students want one place to find recipes, keep their favorites, and follow along while they cook, without losing their place in a long recipe.</p></div>
+  </div>
+  <div class="section">
+    <h3>What I built</h3>
+    <div><p>The same product twice, natively on each platform. You can search a library of recipes from the Tasty API, see each recipe's ingredients and instructions, save favorites to your account, and cook with a step-by-step mode. Both apps use Firebase for accounts, profiles and saved recipes.</p></div>
+  </div>
+  <div class="section">
+    <h3>Planning and design</h3>
+    <div><p>Before writing code, I wrote a 44-page project plan. It covered the problem and vision, audience research and personas, a competitive analysis of Tasty, Yummly and Kitchen Stories with a SWOT for each, a style guide, wireframes for every screen, flowcharts, and an 8-week sprint plan from proof of concept to release.</p></div>
+  </div>
+  <figure class="framed stack-imgs" style="margin-top:40px">
+    <img src="media/wf-discover.jpg" alt="Flavorful wireframes: Discover, recipe Details and Step-by-step screens" loading="lazy">
+    <img src="media/wf-auth.jpg" alt="Flavorful wireframes: Log in, Sign up and Reset password screens" loading="lazy">
+    <img src="media/wf-profile.jpg" alt="Flavorful wireframes: Favorites, Profile and Settings screens" loading="lazy">
+    <figcaption>Wireframes from the project plan: Discover, Details, Step-by-step, Log in, Sign up, Reset password, Favorites, Profile and Settings.</figcaption>
+  </figure>
+  <figure class="framed narrow">
+    <img src="media/flow-auth.jpg" alt="Flowchart of the sign-up, login and password-reset flow through Firebase Authentication" loading="lazy">
+    <figcaption>Authentication flowchart: sign up, log in and password reset through Firebase Authentication.</figcaption>
+  </figure>
+
+  <div class="section">
+    <h3>Engineering</h3>
+    <div class="split">
+      <div><strong>iOS, in Swift and UIKit</strong>Storyboards and tab navigation, custom collection and table view cells, and URLSession networking. Firebase Auth handles login, sign-up and password reset, Firestore stores profiles and saved recipes, and Firebase Storage holds profile photos.</div>
+      <div><strong>Android, in Java</strong>AndroidX Navigation with fragments for Discover, Details, Step-by-step and Favorites, ViewModels, OkHttp networking and Picasso image loading, on the same Firebase backend.</div>
+    </div>
+  </div>
+  <div class="case-links">
+    <a href="https://github.com/SlarveFS/IPV">iOS code ↗</a>
+    <a href="https://github.com/SlarveFS/Flavorful_android">Android code ↗</a>
+  </div>
+</article>
+
+<!-- 03 ResumeMatch -->
+<article class="case" id="resumematch">
+  <div class="case-head">
+    <div><span class="label">03</span><h2>ResumeMatch</h2></div>
+    <p class="lede">A free AI resume builder and job-match analyzer, with no signup and no paywall.</p>
+  </div>
+  <dl class="facts">
+    <div><dt>Year</dt><dd>2026</dd></div>
+    <div><dt>Platform</dt><dd>Web</dd></div>
+    <div><dt>AI</dt><dd>Claude API</dd></div>
+    <div><dt>Status</dt><dd><a href="https://resume-match-gilt.vercel.app">Live</a></dd></div>
+  </dl>
+  <figure class="framed">
+    <a href="https://resume-match-gilt.vercel.app"><img src="https://raw.githubusercontent.com/SlarveFS/ResumeMatch/main/screenshots/wizard.png" alt="ResumeMatch step-by-step wizard with a live resume score" loading="lazy"></a>
+  </figure>
+  <div class="section">
+    <h3>The problem</h3>
+    <div><p>Most resume builders charge $25–50 a month for AI features, put PDF downloads behind a paywall, and make you sign up before you can start.</p></div>
+  </div>
+  <div class="section">
+    <h3>What I built</h3>
+    <div>
+      <p>A guided 7-step wizard with a live resume score, 15 templates, and AI tools that improve bullet points, write summaries and suggest skills.</p>
+      <p>You can import an existing PDF resume, paste a job description to get a keyword-match analysis, tailor the resume to that job, and generate a matching cover letter. PDF export is free.</p>
+    </div>
+  </div>
+  <div class="section">
+    <h3>Engineering</h3>
+    <dl class="notes">
+      <div><dt>Serverless AI endpoints</dt><dd>Eight Vercel functions handle analysis, tailoring, rewriting, suggestions, cover letters, and PDF and URL extraction, backed by the Claude API.</dd></div>
+      <div><dt>Resume import</dt><dd>pdf-parse extracts the text from an uploaded PDF, and Claude maps it into structured fields (experience, education, skills) that fill the editor.</dd></div>
+      <div><dt>No accounts, no server-side data</dt><dd>Resumes live in the browser's local storage, and the PDF export matches the on-screen preview, page breaks included.</dd></div>
+    </dl>
+  </div>
+  <div class="section">
+    <h3>Built with</h3>
+    <p class="built-with">React, Vite, React Router, Vercel serverless functions, Claude API, jsPDF and pdf-parse.</p>
+  </div>
+  <div class="case-links">
+    <a href="https://resume-match-gilt.vercel.app">Try it live ↗</a>
+    <a href="https://github.com/SlarveFS/ResumeMatch">Code ↗</a>
+  </div>
+</article>
+
+<!-- 04 ShiftSense -->
+<article class="case" id="shiftsense">
+  <div class="case-head">
+    <div><span class="label">04</span><h2>ShiftSense</h2></div>
+    <p class="lede">An iPhone app that shows service workers what they really earn per hour, with charts and AI insights from their shift history.</p>
+  </div>
+  <dl class="facts">
+    <div><dt>Year</dt><dd>2026</dd></div>
+    <div><dt>Platform</dt><dd>iOS (SwiftUI)</dd></div>
+    <div><dt>Data</dt><dd>On-device, SwiftData</dd></div>
+    <div><dt>AI</dt><dd>Claude API</dd></div>
+  </dl>
+  <div class="section">
+    <h3>The problem</h3>
+    <div><p>Servers, bartenders and delivery drivers earn a wage plus tips that change every shift. Most don't know their real hourly rate, or which shifts and workplaces actually pay best.</p></div>
+  </div>
+  <div class="section">
+    <h3>What I built</h3>
+    <div><p>An app for logging a shift in seconds: hours, wage, cash and card tips, workplace and tags. A dashboard charts earnings, effective hourly rate, tip mix and trends, and an AI coach turns the history into plain-English insights and progress toward a weekly goal.</p></div>
+  </div>
+  <div class="section">
+    <h3>Engineering</h3>
+    <dl class="notes">
+      <div><dt>Local-first data</dt><dd>SwiftData models for shifts, workplaces and settings keep everything on the device. The code is organized by feature, with four Swift Charts views.</dd></div>
+      <div><dt>Typed AI integration</dt><dd>A service builds a prompt from recent shifts, asks Claude for structured JSON, and decodes it into typed insight models. Errors are typed too, and results are cached so the app doesn't call the API on every view.</dd></div>
+      <div><dt>Privacy</dt><dd>Nothing leaves the phone unless the user asks for insights, and then only a summary of shifts is sent, using their own API key.</dd></div>
+    </dl>
+  </div>
+  <div class="case-links">
+    <a href="https://github.com/SlarveFS/ShiftSense">Code ↗</a>
+  </div>
+</article>
+
+<!-- 05 Tic-Tac-Toe -->
+<article class="case" id="tictactoe">
+  <div class="case-head">
+    <div><span class="label">05</span><h2>Tic-Tac-Toe</h2></div>
+    <p class="lede">A SwiftUI game against a computer opponent that's hard to beat.</p>
+  </div>
+  <div class="section">
+    <h3>Engineering</h3>
+    <div><p>Built in 2023 with an MVVM structure. The view model owns the game state, detects wins and draws, and chooses the computer's move by priority: win if it can, block the player's winning move, take the center, otherwise a random free square. The view only renders state, and input is disabled while the computer is thinking.</p></div>
+  </div>
+  <div class="case-links">
+    <a href="https://github.com/SlarveFS/AI-Challenge-Tic-Tac-Toe">Code and demo video ↗</a>
+  </div>
+</article>
+
+<section class="contact" id="contact">
+  <span class="label">Contact</span>
+  <div>
+    <h2>Get in touch.</h2>
+    <a class="email" href="mailto:benoitslarve98@gmail.com">benoitslarve98@gmail.com</a>
+    <div class="more">
+      <a href="https://github.com/CodeBen98">GitHub · CodeBen98 ↗</a>
+      <a href="https://github.com/SlarveFS">GitHub · SlarveFS ↗</a>
+    </div>
+  </div>
+</section>
+
+<footer><span>Slarve Benoit</span><span>2026</span></footer>
+
+</div>
+</body>
+</html>
