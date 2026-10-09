@@ -8,7 +8,7 @@
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://codeben98.github.io/">
 <meta property="og:title" content="Slarve Benoit · Software Engineer">
-<meta property="og:description" content="Selected work: ShopDesk, Flavorful (iOS + Android), ResumeMatch, ShiftSense and more.">
+<meta property="og:description" content="Selected work: ShopDesk, Flavorful (iOS + Android), ShiftSense and more.">
 <meta property="og:image" content="https://codeben98.github.io/media/og-card.jpg">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
@@ -156,9 +156,8 @@
   <div class="index-head label"><span>Selected work</span><span>Year</span></div>
   <a class="row" href="#shopdesk"><span class="n">01</span><span class="t">ShopDesk</span><span class="d">AI phone receptionist for local businesses</span><span class="y">2026</span></a>
   <a class="row" href="#flavorful"><span class="n">02</span><span class="t">Flavorful</span><span class="d">Recipe app, built natively for iOS and Android</span><span class="y">2021</span></a>
-  <a class="row" href="#resumematch"><span class="n">03</span><span class="t">ResumeMatch</span><span class="d">Free AI resume builder and job-match analyzer</span><span class="y">2026</span></a>
-  <a class="row" href="#shiftsense"><span class="n">04</span><span class="t">ShiftSense</span><span class="d">Shift and tip tracking for service workers, on iPhone</span><span class="y">2026</span></a>
-  <a class="row" href="#tictactoe"><span class="n">05</span><span class="t">Tic-Tac-Toe</span><span class="d">SwiftUI game against a computer opponent</span><span class="y">2023</span></a>
+  <a class="row" href="#shiftsense"><span class="n">03</span><span class="t">ShiftSense</span><span class="d">Shift and tip tracking for service workers, on iPhone</span><span class="y">2026</span></a>
+  <a class="row" href="#tictactoe"><span class="n">04</span><span class="t">Tic-Tac-Toe</span><span class="d">SwiftUI game against a computer opponent</span><span class="y">2023</span></a>
 </section>
 
 <!-- 01 ShopDesk -->
@@ -270,54 +269,10 @@
   </div>
 </article>
 
-<!-- 03 ResumeMatch -->
-<article class="case" id="resumematch">
-  <div class="case-head">
-    <div><span class="label">03</span><h2>ResumeMatch</h2></div>
-    <p class="lede">A free AI resume builder and job-match analyzer, with no signup and no paywall.</p>
-  </div>
-  <dl class="facts">
-    <div><dt>Year</dt><dd>2026</dd></div>
-    <div><dt>Platform</dt><dd>Web</dd></div>
-    <div><dt>AI</dt><dd>Claude API</dd></div>
-    <div><dt>Status</dt><dd><a href="https://resume-match-gilt.vercel.app">Live</a></dd></div>
-  </dl>
-  <figure class="framed">
-    <a href="https://resume-match-gilt.vercel.app"><img src="https://raw.githubusercontent.com/SlarveFS/ResumeMatch/main/screenshots/wizard.png" alt="ResumeMatch step-by-step wizard with a live resume score" loading="lazy"></a>
-  </figure>
-  <div class="section">
-    <h3>The problem</h3>
-    <div><p>Most resume builders charge $25–50 a month for AI features, put PDF downloads behind a paywall, and make you sign up before you can start.</p></div>
-  </div>
-  <div class="section">
-    <h3>What I built</h3>
-    <div>
-      <p>A guided 7-step wizard with a live resume score, 15 templates, and AI tools that improve bullet points, write summaries and suggest skills.</p>
-      <p>You can import an existing PDF resume, paste a job description to get a keyword-match analysis, tailor the resume to that job, and generate a matching cover letter. PDF export is free.</p>
-    </div>
-  </div>
-  <div class="section">
-    <h3>Engineering</h3>
-    <dl class="notes">
-      <div><dt>Serverless AI endpoints</dt><dd>Eight Vercel functions handle analysis, tailoring, rewriting, suggestions, cover letters, and PDF and URL extraction, backed by the Claude API.</dd></div>
-      <div><dt>Resume import</dt><dd>pdf-parse extracts the text from an uploaded PDF, and Claude maps it into structured fields (experience, education, skills) that fill the editor.</dd></div>
-      <div><dt>No accounts, no server-side data</dt><dd>Resumes live in the browser's local storage, and the PDF export matches the on-screen preview, page breaks included.</dd></div>
-    </dl>
-  </div>
-  <div class="section">
-    <h3>Built with</h3>
-    <p class="built-with">React, Vite, React Router, Vercel serverless functions, Claude API, jsPDF and pdf-parse.</p>
-  </div>
-  <div class="case-links">
-    <a href="https://resume-match-gilt.vercel.app">Try it live ↗</a>
-    <a href="https://github.com/SlarveFS/ResumeMatch">Code ↗</a>
-  </div>
-</article>
-
-<!-- 04 ShiftSense -->
+<!-- 03 ShiftSense -->
 <article class="case" id="shiftsense">
   <div class="case-head">
-    <div><span class="label">04</span><h2>ShiftSense</h2></div>
+    <div><span class="label">03</span><h2>ShiftSense</h2></div>
     <p class="lede">An iPhone app that shows service workers what they really earn per hour, with charts and AI insights from their shift history.</p>
   </div>
   <dl class="facts">
@@ -347,10 +302,10 @@
   </div>
 </article>
 
-<!-- 05 Tic-Tac-Toe -->
+<!-- 04 Tic-Tac-Toe -->
 <article class="case" id="tictactoe">
   <div class="case-head">
-    <div><span class="label">05</span><h2>Tic-Tac-Toe</h2></div>
+    <div><span class="label">04</span><h2>Tic-Tac-Toe</h2></div>
     <p class="lede">A SwiftUI game against a computer opponent that's hard to beat.</p>
   </div>
   <div class="section">
