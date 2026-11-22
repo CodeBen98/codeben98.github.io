@@ -167,7 +167,8 @@ $('target').addEventListener('input', e => {
 // ---------- calibration offset (applied to every reading, raw values kept) ----------
 let offset = 0;
 try { const v = parseFloat(localStorage.getItem('brti_offset')); if (!isNaN(v)) offset = v; } catch (e) {}
-let lastRaw = null;
+let calT = null, exSpread = 0;
+try { const v = parseInt(localStorage.getItem('brti_calT')); if (v && Date.now() - v < 36e5) calT = v; } catch (e) {}
 function showOffset() { $('calInfo').textContent = 'Offset: ' + (offset >= 0 ? '+$' : '-$') + fmt(Math.abs(offset)); }
 function saveOffset() { try { localStorage.setItem('brti_offset', offset); } catch (e) {} showOffset(); render(); }
 $('calBtn').addEventListener('click', () => {
@@ -175,10 +176,11 @@ $('calBtn').addEventListener('click', () => {
   const raw = indexNow();
   if (isNaN(k) || raw == null) { $('calInfo').textContent = raw == null ? 'Waiting for feeds' : 'Enter Kalshi price'; return; }
   offset = Math.round((k - raw) * 100) / 100;
+  calT = Date.now(); try { localStorage.setItem('brti_calT', calT); } catch (e) {}
   $('kprice').value = '';
   saveOffset();
 });
-$('calReset').addEventListener('click', () => { offset = 0; saveOffset(); });
+$('calReset').addEventListener('click', () => { offset = 0; calT = null; try { localStorage.removeItem('brti_calT'); } catch (e) {} saveOffset(); });
 showOffset();
 function mkSample(t, r) { return {t, r, get p() { return this.r + offset; }}; }
 
@@ -189,11 +191,41 @@ function Phi(z) { // standard normal CDF
   const p = d * t * (0.3193815 + t * (-0.3565638 + t * (1.781478 + t * (-1.821256 + t * 1.330274))));
   return z > 0 ? 1 - p : p;
 }
-function sigmaPerSec() { // RMS of 1-second moves over the last 5 minutes
-  const s = samples.slice(-301); let ss = 0, n = 0;
+function rmsMove(win) { // RMS of 1-second moves over the last win seconds
+  const s = samples.slice(-(win + 1)); let ss = 0, n = 0;
   for (let i = 1; i < s.length; i++) if (s[i].t - s[i - 1].t === 1) { const d = s[i].r - s[i - 1].r; ss += d * d; n++; }
-  return n >= 30 ? Math.max(Math.sqrt(ss / n), 0.5) : null;
+  return n >= Math.min(30, win / 2) ? Math.sqrt(ss / n) : null;
 }
+function sigmaPerSec() { // blend of 1, 5 and 15 minute volatility; a fresh spike always counts in full
+  const v1 = rmsMove(60), v5 = rmsMove(300), v15 = rmsMove(900);
+  if (v1 == null && v5 == null) return null;
+  const parts = [[v1, 0.25], [v5, 0.45], [v15, 0.30]].filter(x => x[0] != null);
+  const w = parts.reduce((a, x) => a + x[1], 0);
+  const blend = Math.sqrt(parts.reduce((a, x) => a + x[1] * x[0] * x[0], 0) / w);
+  return Math.max(blend, v1 || 0, 0.5);
+}
+// how far our estimate may sit from the official BRTI: grows with time since calibrating and with exchange disagreement
+function estErr() {
+  const age = calT ? (Date.now() - calT) / 60000 : null;
+  const base = age == null ? 15 : Math.min(3 + age * 1.5, 15);
+  return Math.sqrt(base * base + (exSpread / 4) ** 2);
+}
+// fat tails: Student t with 4 degrees of freedom, scaled to unit variance
+function tCdf(z) { const t = z * Math.SQRT2, x = t / Math.sqrt(4 + t * t); return 0.5 + 0.75 * x - 0.25 * x * x * x; }
+// self-tuning: once enough results are logged, stretch or shrink confidence to match what actually happened
+function tuneScale() {
+  const pts = [];
+  for (const w of log) for (const c in w.ck) { const e = w.ck[c]; const z = e.z != null ? e.z : invP(e.p); if (isFinite(z)) pts.push([Math.max(-8, Math.min(8, z)), w.y]); }
+  const n = pts.length; if (n < 40) return {k: 1, n};
+  let best = 1, bestL = Infinity;
+  for (let k = 0.4; k <= 2.001; k += 0.05) {
+    let L = 0; for (const [z, y] of pts) { const p = Math.min(Math.max(tCdf(k * z), 1e-4), 1 - 1e-4); L -= y ? Math.log(p) : Math.log(1 - p); }
+    if (L < bestL) { bestL = L; best = k; }
+  }
+  return {k: 1 + (best - 1) * n / (n + 100), n}; // shrink toward 1 until there is lots of data
+}
+function invP(p) { if (!(p > 0 && p < 1)) return NaN; let lo = -8, hi = 8; for (let i = 0; i < 50; i++) { const m = (lo + hi) / 2; tCdf(m) < p ? lo = m : hi = m; } return (lo + hi) / 2; }
+let tune = {k: 1, n: 0};
 function model() {
   if (target == null || !samples.length) return null;
   const last = samples[samples.length - 1], t = last.t, P = last.p;
@@ -204,13 +236,15 @@ function model() {
   const n = k + d.length;
   if (!n) return null;
   const mean = (S + d.length * P) / n;
-  if (!d.length) return {p: mean >= target ? 1 : 0, mean, sd: 0};
+  if (!d.length) { const err = estErr(), z = (mean - target) / err; return {p: tCdf(tune.k * z), z, mean, sd: err, err}; }
   const sig = sigmaPerSec();
   if (sig == null) return null;
   let v = 0; const m = d.length;
   for (let i = 0; i < m; i++) v += d[i] * (2 * (m - 1 - i) + 1); // sum over i,j of min(d_i, d_j)
-  const sd = sig * Math.sqrt(v) / n;
-  return {p: Phi((mean - target) / sd), mean, sd, sig};
+  const sdMove = sig * Math.sqrt(v) / n, err = estErr();
+  const sd = Math.sqrt(sdMove * sdMove + err * err);
+  const z = (mean - target) / sd;
+  return {p: tCdf(tune.k * z), z, mean, sd, sig, err};
 }
 
 // ---------- learning log ----------
@@ -223,7 +257,7 @@ function checkpoint(left) {
   if (!pending || pending.c !== closeT) pending = {c: closeT, ck: {}};
   for (const c of CKS) if (left <= c && left > c - 15 && !(c in pending.ck)) {
     const m = model();
-    if (m) pending.ck[c] = {p: Math.round(m.p * 1000) / 1000};
+    if (m) pending.ck[c] = {p: Math.round(m.p * 1000) / 1000, z: Math.round(m.z * 1000) / 1000};
   }
 }
 function finalize(c, avg) {
@@ -235,6 +269,7 @@ function finalize(c, avg) {
   pending = null;
 }
 function renderStats() {
+  tune = tuneScale();
   $('logN').textContent = log.length;
   const lab = {300: '5 min', 120: '2 min', 30: '30 sec'};
   $('statsCk').innerHTML = CKS.map(c => {
@@ -321,6 +356,7 @@ function indexNow() {
   }
   if (!mids.length) return null;
   mids.sort((a, b) => a - b);
+  exSpread = mids[mids.length - 1] - mids[0];
   const h = mids.length >> 1;
   return mids.length % 2 ? mids[h] : (mids[h - 1] + mids[h]) / 2;
 }
@@ -387,7 +423,9 @@ function render() {
     $('pno').textContent = '';
   }
   $('volInfo').textContent = sig == null ? 'Measuring volatility (needs about 30 seconds)...'
-    : `Based on distance from target, time left, and BTC moving about $${fmt(sig * Math.sqrt(60), 0)} per minute right now.`;
+    : `Based on distance from target, time left, and BTC moving about $${fmt(sig * Math.sqrt(60), 0)} per minute.`
+      + (md ? ` Estimate error allowance ±$${fmt(md.err, 0)}${calT ? '' : ' (calibrate to tighten)'}.` : '')
+      + (tune.n >= 40 ? ` Tuned from ${tune.n} logged results (x${fmt(tune.k, 2)}).` : ` Self-tuning starts after 40 logged results (${tune.n} so far).`);
 
   let calc = '';
   if (avg != null && target != null) {
