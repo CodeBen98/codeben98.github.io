@@ -92,20 +92,14 @@
     <div class="stat"><div class="lbl">vs target</div><div class="big" id="diff">--</div></div>
     <div class="stat"><div class="lbl">Lean</div><div id="verdict" class="mut">--</div></div>
   </div>
-</div>
-
-<div class="card">
-  <div class="lbl" style="margin-bottom:6px">Odds and edge</div>
-  <div class="row" style="align-items:flex-end">
-    <div class="stat"><div class="lbl">Model YES chance</div><div class="big" id="pyes">--</div></div>
-    <div class="stat">
-      <label for="kyes">Kalshi YES price (cents)</label><br>
-      <input id="kyes" type="number" step="1" min="1" max="99" inputmode="numeric" placeholder="e.g. 70" style="width:120px">
+  <div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--line)">
+    <div class="lbl">Chance it resolves YES (at or above target)</div>
+    <div class="row" style="align-items:baseline">
+      <div class="big" id="pyes" style="font-size:34px">--</div>
+      <div class="mut" id="pno" style="font-size:15px">--</div>
     </div>
-    <div class="stat"><div class="lbl">Edge</div><div class="med" id="edge">--</div></div>
+    <div class="warn" id="volInfo">Measuring volatility (needs about 30 seconds)...</div>
   </div>
-  <div class="warn" id="volInfo" style="margin-top:8px">Measuring volatility...</div>
-  <div class="warn" style="margin-top:4px">The model treats BTC as a random walk at its last 5 minutes of speed. It can't see news or sudden spikes. Edge = model chance minus Kalshi price. The Kalshi price box clears at each close.</div>
 </div>
 
 <div class="card">
@@ -139,8 +133,6 @@
   <table><thead><tr><th>Checkpoint</th><th>N</th><th>Hit rate</th><th>Avg conf.</th><th>Brier</th></tr></thead><tbody id="statsCk"></tbody></table>
   <div class="lbl" style="margin:12px 0 6px">Calibration (all checkpoints)</div>
   <table><thead><tr><th>Model said</th><th>N</th><th>Avg predicted</th><th>Actually won</th></tr></thead><tbody id="statsCal"></tbody></table>
-  <div class="lbl" style="margin:12px 0 6px">Edge trades (when you entered a Kalshi price and edge was 5¢ or more)</div>
-  <div class="calc" id="statsEdge">No data yet.</div>
   <div style="display:flex;gap:8px;margin-top:10px">
     <button id="logCopy" class="btn ghost">Copy log</button>
     <button id="logClear" class="btn ghost">Clear log</button>
@@ -227,12 +219,11 @@ let log = [];
 try { log = JSON.parse(localStorage.getItem('brti_log') || '[]'); } catch (e) {}
 let pending = null;
 const saveLog = () => { try { localStorage.setItem('brti_log', JSON.stringify(log)); } catch (e) {} };
-const kyesVal = () => { const v = parseFloat($('kyes').value); return v >= 1 && v <= 99 ? v : null; };
 function checkpoint(left) {
   if (!pending || pending.c !== closeT) pending = {c: closeT, ck: {}};
   for (const c of CKS) if (left <= c && left > c - 15 && !(c in pending.ck)) {
     const m = model();
-    if (m) pending.ck[c] = {p: Math.round(m.p * 1000) / 1000, k: kyesVal()};
+    if (m) pending.ck[c] = {p: Math.round(m.p * 1000) / 1000};
   }
 }
 function finalize(c, avg) {
@@ -242,7 +233,6 @@ function finalize(c, avg) {
     saveLog();
   }
   pending = null;
-  $('kyes').value = '';
 }
 function renderStats() {
   $('logN').textContent = log.length;
@@ -255,21 +245,11 @@ function renderStats() {
     return `<tr><td>${lab[c]}</td><td>${n}</td><td>${fmt(hit / n * 100, 0)}%</td><td>${fmt(conf / n * 100, 0)}%</td><td>${fmt(br / n, 3)}</td></tr>`;
   }).join('');
   const bins = [[50, 60], [60, 70], [70, 80], [80, 90], [90, 101]].map(b => ({b, n: 0, pc: 0, w: 0}));
-  const trades = [];
   for (const w of log) for (const c of CKS) { const e = w.ck[c]; if (!e) continue;
     const conf = Math.max(e.p, 1 - e.p) * 100, won = (e.p >= 0.5) === (w.y === 1);
     const bin = bins.find(x => conf >= x.b[0] && conf < x.b[1]); if (bin) { bin.n++; bin.pc += conf; bin.w += won ? 1 : 0; }
-    if (e.k != null) {
-      const ey = e.p * 100 - e.k, en = (1 - e.p) * 100 - (100 - e.k);
-      if (ey >= 5) trades.push(w.y ? 100 - e.k : -e.k);
-      else if (en >= 5) trades.push(w.y ? -(100 - e.k) : e.k);
-    }
   }
   $('statsCal').innerHTML = bins.map(x => `<tr><td>${x.b[0]}-${Math.min(x.b[1], 100)}%</td><td>${x.n}</td><td>${x.n ? fmt(x.pc / x.n, 0) + '%' : '--'}</td><td>${x.n ? fmt(x.w / x.n * 100, 0) + '%' : '--'}</td></tr>`).join('');
-  if (trades.length) {
-    const tot = trades.reduce((a, b) => a + b, 0), wins = trades.filter(x => x > 0).length;
-    $('statsEdge').textContent = `Trades: ${trades.length}   Won: ${wins} (${fmt(wins / trades.length * 100, 0)}%)\nP&L if 1 contract each: ${tot >= 0 ? '+' : '-'}$${fmt(Math.abs(tot) / 100)} (before fees)\nAvg per trade: ${fmt(tot / trades.length, 1)}¢`;
-  } else $('statsEdge').textContent = 'No data yet.';
 }
 $('logCopy').addEventListener('click', async () => {
   try { await navigator.clipboard.writeText(JSON.stringify(log)); $('logMsg').textContent = 'Copied'; } catch (e) { $('logMsg').textContent = 'Copy blocked'; }
@@ -279,7 +259,6 @@ $('logClear').addEventListener('click', () => {
   if (Date.now() - clearArm < 4000) { log = []; saveLog(); renderStats(); $('logMsg').textContent = 'Cleared'; clearArm = 0; }
   else { clearArm = Date.now(); $('logMsg').textContent = 'Tap again to clear'; }
 });
-$('kyes').addEventListener('input', () => render());
 
 const nextClose = t => Math.floor(t / WIN) * WIN + WIN;
 let closeT = nextClose(Math.floor(Date.now() / 1000));
@@ -357,7 +336,7 @@ function tick() {
       const avg = ws.reduce((a, s) => a + s.p, 0) / ws.length;
       history.unshift({c: closeT, avg, n: ws.length, target, res: target == null ? null : (avg >= target ? 'YES' : 'NO')});
       if (history.length > 12) history.pop();
-      if (ws.length >= 50) finalize(closeT, avg); else { pending = null; $('kyes').value = ''; }
+      if (ws.length >= 50) finalize(closeT, avg); else pending = null;
       renderStats();
       if ($('autoroll').checked) {
         target = Math.round(avg * 100) / 100;
@@ -396,24 +375,19 @@ function render() {
   $('avgLbl').textContent = inWin ? 'Settlement avg so far' : 'Rolling 60s avg';
   $('avg').textContent = fmt(avg);
 
-  // odds + edge
-  const md = model(), sig = sigmaPerSec(), ky = kyesVal();
+  // chance of YES
+  const md = model(), sig = sigmaPerSec();
   if (md) {
     const pc = md.p * 100;
-    $('pyes').textContent = fmt(pc, 1) + '%';
+    $('pyes').textContent = fmt(pc, 1) + '% YES';
     $('pyes').className = 'big ' + (pc >= 50 ? 'yes' : 'no');
-    if (ky != null) {
-      const ey = pc - ky, en = (100 - pc) - (100 - ky);
-      const best = ey >= en ? ['YES', ey] : ['NO', en];
-      $('edge').textContent = best[1] >= 5 ? `${best[0]} +${fmt(best[1], 1)}¢` : best[1] > 0 ? `${best[0]} +${fmt(best[1], 1)}¢ (small)` : 'No edge';
-      $('edge').className = 'med ' + (best[1] >= 5 ? (best[0] === 'YES' ? 'yes' : 'no') : 'mut');
-    } else { $('edge').textContent = 'Enter price'; $('edge').className = 'med mut'; }
+    $('pno').textContent = fmt(100 - pc, 1) + '% NO';
   } else {
     $('pyes').textContent = target == null ? 'Set target' : '--'; $('pyes').className = 'big mut';
-    $('edge').textContent = '--'; $('edge').className = 'med mut';
+    $('pno').textContent = '';
   }
   $('volInfo').textContent = sig == null ? 'Measuring volatility (needs about 30 seconds)...'
-    : `BTC volatility: about $${fmt(sig)} per second, $${fmt(sig * Math.sqrt(60), 0)} per minute.` + (md && md.sd ? ` Expected spread of the settlement avg: ±$${fmt(md.sd, 0)}.` : '');
+    : `Based on distance from target, time left, and BTC moving about $${fmt(sig * Math.sqrt(60), 0)} per minute right now.`;
 
   let calc = '';
   if (avg != null && target != null) {
