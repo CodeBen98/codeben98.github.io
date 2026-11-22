@@ -475,7 +475,9 @@ function indexNow() {
 }
 
 // ---------- Kalshi public market data (no account needed) ----------
-const KAPI = 'https://api.elections.kalshi.com/trade-api/v2/markets?series_ticker=KXBTC15M';
+// Kalshi rejects browser requests, so when run via `node server.js` go through its local proxy
+const LOCAL = /^(localhost|127\.0\.0\.1)$/.test(location.hostname);
+const KAPI = (LOCAL ? '/kalshi' : 'https://api.elections.kalshi.com/trade-api/v2') + '/markets?series_ticker=KXBTC15M';
 let kStat = 'connecting', kTargetFor = null, kLastCalC = 0, kLastMsg = '';
 const ctEpoch = m => Math.round(Date.parse(m.close_time) / 1000);
 async function kFetch(q) {
