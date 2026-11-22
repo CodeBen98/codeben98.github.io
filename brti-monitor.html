@@ -129,12 +129,26 @@
 
 <div class="card">
   <div class="lbl" style="margin-bottom:6px">Learning log (<span id="logN">0</span> windows saved on this phone)</div>
-  <div class="warn" style="margin-bottom:8px">Saves the model's chance at 5 min, 2 min and 30 s before close, plus the result. Hit rate = how often the side the model favored won. Brier = accuracy score, lower is better (0.25 = coin flip).</div>
-  <table><thead><tr><th>Checkpoint</th><th>N</th><th>Hit rate</th><th>Avg conf.</th><th>Brier</th></tr></thead><tbody id="statsCk"></tbody></table>
+  <div class="warn" style="margin-bottom:8px">Saves the model's chance at 5 min, 2 min, 1 min, 30 sec and 10 sec before every close, plus the result. Tap the Official column to enter Kalshi's real result (YES, NO, or tap again to clear). Marked windows grade the model on real outcomes. <span id="logMarked">0</span> marked so far.</div>
+
+  <div class="lbl" style="margin:4px 0 6px">What the log says</div>
+  <ul id="insights" style="margin:0 0 10px;padding-left:18px;font-size:14px;line-height:1.5"></ul>
+
+  <div class="lbl" style="margin:12px 0 6px">Recent windows</div>
+  <table><thead><tr><th>Close</th><th>Avg vs tgt</th><th>Official</th><th>@2m</th><th>@30s</th><th>Right</th></tr></thead><tbody id="winRows"></tbody></table>
+  <div class="warn" style="margin-top:4px">@2m and @30s = the model's YES chance at that moment. Right = whether the final checkpoint's pick matched the result.</div>
+
+  <div class="lbl" style="margin:12px 0 6px">Accuracy by time left</div>
+  <table><thead><tr><th>Checkpoint</th><th>N</th><th>Right</th><th>Avg conf.</th><th>Brier</th></tr></thead><tbody id="statsCk"></tbody></table>
+  <div class="warn" style="margin-top:4px">Brier is an accuracy score where lower is better. 0.25 is a coin flip.</div>
+
   <div class="lbl" style="margin:12px 0 6px">Calibration (all checkpoints)</div>
   <table><thead><tr><th>Model said</th><th>N</th><th>Avg predicted</th><th>Actually won</th></tr></thead><tbody id="statsCal"></tbody></table>
+
+  <div class="lbl" style="margin:12px 0 6px">Favored side win rate by distance from target</div>
+  <table><thead><tr><th>Avg vs target</th><th>At 2 min</th><th>At 30 sec</th></tr></thead><tbody id="statsDist"></tbody></table>
   <div style="display:flex;gap:8px;margin-top:10px">
-    <button id="logCopy" class="btn ghost">Copy log</button>
+    <button id="logCopy" class="btn ghost">Copy log (CSV)</button>
     <button id="logClear" class="btn ghost">Clear log</button>
     <span id="logMsg" class="mut" style="font-size:13px;align-self:center"></span>
   </div>
@@ -213,9 +227,8 @@ function estErr() {
 // fat tails: Student t with 4 degrees of freedom, scaled to unit variance
 function tCdf(z) { const t = z * Math.SQRT2, x = t / Math.sqrt(4 + t * t); return 0.5 + 0.75 * x - 0.25 * x * x * x; }
 // self-tuning: once enough results are logged, stretch or shrink confidence to match what actually happened
-function tuneScale() {
-  const pts = [];
-  for (const w of log) for (const c in w.ck) { const e = w.ck[c]; const z = e.z != null ? e.z : invP(e.p); if (isFinite(z)) pts.push([Math.max(-8, Math.min(8, z)), w.y]); }
+const yOf = w => w.off != null ? w.off : w.y;   // official result if you marked it, else our estimate
+function fitK(pts) {
   const n = pts.length; if (n < 40) return {k: 1, n};
   let best = 1, bestL = Infinity;
   for (let k = 0.4; k <= 2.001; k += 0.05) {
@@ -224,8 +237,22 @@ function tuneScale() {
   }
   return {k: 1 + (best - 1) * n / (n + 100), n}; // shrink toward 1 until there is lots of data
 }
+function tuneScale() {
+  const all = [], by = {};
+  for (const w of log) for (const c in w.ck) {
+    const e = w.ck[c]; const z = e.z != null ? e.z : invP(e.p); if (!isFinite(z)) continue;
+    const pt = [Math.max(-8, Math.min(8, z)), yOf(w)]; all.push(pt); (by[c] = by[c] || []).push(pt);
+  }
+  const res = {all: fitK(all), by: {}};
+  for (const c in by) res.by[c] = fitK(by[c]);
+  return res;
+}
+function kFor(left) { // use the tuning learned for the nearest checkpoint, else the overall one
+  let c = CKS[0]; for (const x of CKS) if (Math.abs(x - left) < Math.abs(c - left)) c = x;
+  const b = tune.by[c]; return b && b.n >= 40 ? b.k : tune.all.k;
+}
 function invP(p) { if (!(p > 0 && p < 1)) return NaN; let lo = -8, hi = 8; for (let i = 0; i < 50; i++) { const m = (lo + hi) / 2; tCdf(m) < p ? lo = m : hi = m; } return (lo + hi) / 2; }
-let tune = {k: 1, n: 0};
+let tune = {all: {k: 1, n: 0}, by: {}};
 function model() {
   if (target == null || !samples.length) return null;
   const last = samples[samples.length - 1], t = last.t, P = last.p;
@@ -236,7 +263,8 @@ function model() {
   const n = k + d.length;
   if (!n) return null;
   const mean = (S + d.length * P) / n;
-  if (!d.length) { const err = estErr(), z = (mean - target) / err; return {p: tCdf(tune.k * z), z, mean, sd: err, err}; }
+  const kk = kFor(closeT - t);
+  if (!d.length) { const err = estErr(), z = (mean - target) / err; return {p: tCdf(kk * z), z, mean, sd: err, err, k: kk}; }
   const sig = sigmaPerSec();
   if (sig == null) return null;
   let v = 0; const m = d.length;
@@ -244,20 +272,21 @@ function model() {
   const sdMove = sig * Math.sqrt(v) / n, err = estErr();
   const sd = Math.sqrt(sdMove * sdMove + err * err);
   const z = (mean - target) / sd;
-  return {p: tCdf(tune.k * z), z, mean, sd, sig, err};
+  return {p: tCdf(kk * z), z, mean, sd, sig, err, k: kk};
 }
 
 // ---------- learning log ----------
-const CKS = [300, 120, 30];
+const CKS = [300, 120, 60, 30, 10];
+const LAB = {300: '5 min', 120: '2 min', 60: '1 min', 30: '30 sec', 10: '10 sec'};
 let log = [];
 try { log = JSON.parse(localStorage.getItem('brti_log') || '[]'); } catch (e) {}
 let pending = null;
 const saveLog = () => { try { localStorage.setItem('brti_log', JSON.stringify(log)); } catch (e) {} };
 function checkpoint(left) {
   if (!pending || pending.c !== closeT) pending = {c: closeT, ck: {}};
-  for (const c of CKS) if (left <= c && left > c - 15 && !(c in pending.ck)) {
+  for (const c of CKS) if (left <= c && left > c - Math.min(15, c) && !(c in pending.ck)) {
     const m = model();
-    if (m) pending.ck[c] = {p: Math.round(m.p * 1000) / 1000, z: Math.round(m.z * 1000) / 1000};
+    if (m) pending.ck[c] = {p: Math.round(m.p * 1000) / 1000, z: Math.round(m.z * 1000) / 1000, d: Math.round((m.mean - target) * 100) / 100, v: m.sig ? Math.round(m.sig * Math.sqrt(60)) : null};
   }
 }
 function finalize(c, avg) {
@@ -268,26 +297,102 @@ function finalize(c, avg) {
   }
   pending = null;
 }
+const pct = (a, b) => b ? fmt(a / b * 100, 0) + '%' : '--';
 function renderStats() {
   tune = tuneScale();
   $('logN').textContent = log.length;
-  const lab = {300: '5 min', 120: '2 min', 30: '30 sec'};
+  const marked = log.filter(w => w.off != null).length;
+  $('logMarked').textContent = marked;
+
+  // accuracy by checkpoint
+  const ckStat = {};
   $('statsCk').innerHTML = CKS.map(c => {
     const r = log.filter(w => w.ck[c]); const n = r.length;
-    if (!n) return `<tr><td>${lab[c]}</td><td>0</td><td>--</td><td>--</td><td>--</td></tr>`;
     let hit = 0, conf = 0, br = 0;
-    for (const w of r) { const p = w.ck[c].p; hit += (p >= 0.5) === (w.y === 1) ? 1 : 0; conf += Math.max(p, 1 - p); br += (p - w.y) ** 2; }
-    return `<tr><td>${lab[c]}</td><td>${n}</td><td>${fmt(hit / n * 100, 0)}%</td><td>${fmt(conf / n * 100, 0)}%</td><td>${fmt(br / n, 3)}</td></tr>`;
+    for (const w of r) { const p = w.ck[c].p, y = yOf(w); hit += (p >= 0.5) === (y === 1) ? 1 : 0; conf += Math.max(p, 1 - p); br += (p - y) ** 2; }
+    ckStat[c] = {n, hit, conf, br};
+    return n ? `<tr><td>${LAB[c]}</td><td>${n}</td><td>${pct(hit, n)}</td><td>${fmt(conf / n * 100, 0)}%</td><td>${fmt(br / n, 3)}</td></tr>`
+             : `<tr><td>${LAB[c]}</td><td>0</td><td>--</td><td>--</td><td>--</td></tr>`;
   }).join('');
+
+  // calibration
   const bins = [[50, 60], [60, 70], [70, 80], [80, 90], [90, 101]].map(b => ({b, n: 0, pc: 0, w: 0}));
+  let totP = 0, totW = 0, totN = 0;
   for (const w of log) for (const c of CKS) { const e = w.ck[c]; if (!e) continue;
-    const conf = Math.max(e.p, 1 - e.p) * 100, won = (e.p >= 0.5) === (w.y === 1);
+    const conf = Math.max(e.p, 1 - e.p) * 100, won = (e.p >= 0.5) === (yOf(w) === 1);
     const bin = bins.find(x => conf >= x.b[0] && conf < x.b[1]); if (bin) { bin.n++; bin.pc += conf; bin.w += won ? 1 : 0; }
+    totP += conf; totW += won ? 1 : 0; totN++;
   }
-  $('statsCal').innerHTML = bins.map(x => `<tr><td>${x.b[0]}-${Math.min(x.b[1], 100)}%</td><td>${x.n}</td><td>${x.n ? fmt(x.pc / x.n, 0) + '%' : '--'}</td><td>${x.n ? fmt(x.w / x.n * 100, 0) + '%' : '--'}</td></tr>`).join('');
+  $('statsCal').innerHTML = bins.map(x => `<tr><td>${x.b[0]}-${Math.min(x.b[1], 100)}%</td><td>${x.n}</td><td>${x.n ? fmt(x.pc / x.n, 0) + '%' : '--'}</td><td>${pct(x.w, x.n)}</td></tr>`).join('');
+
+  // win rate of the favored side by distance from target
+  const dB = [[0, 10], [10, 25], [25, 50], [50, 100], [100, 1e9]];
+  const dc = [120, 30];
+  $('statsDist').innerHTML = dB.map(([a, b]) => '<tr><td>' + (b > 1e8 ? `$${a}+` : `$${a}-${b}`) + '</td>' + dc.map(c => {
+    let n = 0, wn = 0;
+    for (const w of log) { const e = w.ck[c]; if (!e || e.d == null) continue; const ad = Math.abs(e.d); if (ad < a || ad >= b) continue; n++; if ((e.d >= 0) === (yOf(w) === 1)) wn++; }
+    return `<td>${n ? pct(wn, n) + ` <span class="mut">(${n})</span>` : '--'}</td>`;
+  }).join('') + '</tr>').join('');
+
+  // recent windows
+  const rec = log.slice(-25).reverse();
+  $('winRows').innerHTML = rec.length ? rec.map(w => {
+    const i = log.indexOf(w), d = w.avg - w.tgt, last = CKS.slice().reverse().find(c => w.ck[c]);
+    const lp = last ? w.ck[last].p : null, y = yOf(w);
+    const right = lp == null ? '' : ((lp >= 0.5) === (y === 1) ? '<span class="yes">✓</span>' : '<span class="no">✗</span>');
+    const off = w.off == null ? '<span class="mut">tap</span>' : (w.off ? '<span class="yes">YES</span>' : '<span class="no">NO</span>');
+    const ck = c => w.ck[c] ? fmt(w.ck[c].p * 100, 0) + '%' : '--';
+    return `<tr><td>${etTime(w.c).replace(':00 ET', '').replace(' ET', '')}</td><td class="${d >= 0 ? 'yes' : 'no'}">${d >= 0 ? '+' : ''}${fmt(d)}</td><td data-i="${i}" class="offc" style="cursor:pointer">${off}</td><td>${ck(120)}</td><td>${ck(30)}</td><td>${right}</td></tr>`;
+  }).join('') : '<tr><td colspan="6" class="mut">None yet. Keep the page open through a close.</td></tr>';
+
+  // insights
+  const tips = [];
+  if (log.length < 10) tips.push(`Need at least 10 logged windows before drawing conclusions (have ${log.length}).`);
+  else {
+    const bestC = CKS.filter(c => ckStat[c].n >= 10).sort((a, b) => ckStat[b].hit / ckStat[b].n - ckStat[a].hit / ckStat[a].n)[0];
+    const earliest = CKS.find(c => ckStat[c].n >= 10 && ckStat[c].hit / ckStat[c].n >= 0.8);
+    if (earliest) tips.push(`Earliest reliable checkpoint: ${LAB[earliest]} before close, right ${pct(ckStat[earliest].hit, ckStat[earliest].n)} of the time (${ckStat[earliest].n} windows).`);
+    else if (bestC) tips.push(`No checkpoint is above 80% right yet. Best so far: ${LAB[bestC]} at ${pct(ckStat[bestC].hit, ckStat[bestC].n)}.`);
+    for (const c of [300, 120, 60]) {
+      for (const th of [60, 70, 80, 90]) {
+        const r = log.filter(w => w.ck[c] && Math.max(w.ck[c].p, 1 - w.ck[c].p) * 100 >= th);
+        const wn = r.filter(w => (w.ck[c].p >= 0.5) === (yOf(w) === 1)).length;
+        if (r.length >= 10 && wn / r.length >= 0.9) { tips.push(`Trust rule: at ${LAB[c]}, calls of ${th}%+ have won ${pct(wn, r.length)} (${wn} of ${r.length}).`); break; }
+      }
+    }
+    if (totN >= 20) {
+      const gap = totP / totN - totW / totN * 100;
+      tips.push(Math.abs(gap) <= 3 ? `Calibration is good: the model's confidence matches its win rate within ${fmt(Math.abs(gap), 0)} points.`
+        : gap > 0 ? `The model has been overconfident by about ${fmt(gap, 0)} points. ${tune.all.n >= 40 ? 'Self-tuning now scales confidence by x' + fmt(tune.all.k, 2) + ' (above 1 = bolder, below 1 = more cautious).' : 'Self-tuning kicks in at 40 results.'}`
+        : `The model has been underconfident by about ${fmt(-gap, 0)} points, so its calls are better than they look. ${tune.all.n >= 40 ? 'Self-tuning now scales confidence by x' + fmt(tune.all.k, 2) + ' (above 1 = bolder, below 1 = more cautious).' : 'Self-tuning kicks in at 40 results.'}`);
+    }
+    const vs = log.filter(w => w.ck[120] && w.ck[120].v != null);
+    if (vs.length >= 20) {
+      const med = vs.map(w => w.ck[120].v).sort((a, b) => a - b)[vs.length >> 1];
+      const g = hi => { const r = vs.filter(w => hi ? w.ck[120].v > med : w.ck[120].v <= med); const wn = r.filter(w => (w.ck[120].p >= 0.5) === (yOf(w) === 1)).length; return [wn, r.length]; };
+      const [cw, cn] = g(false), [hw, hn] = g(true);
+      tips.push(`At 2 min: calm markets (under $${med}/min) right ${pct(cw, cn)}, choppy markets right ${pct(hw, hn)}.${hw / hn < cw / cn - 0.1 ? ' Be more careful when BTC is choppy.' : ''}`);
+    }
+  }
+  if (marked) {
+    const mk = log.filter(w => w.off != null), miss = mk.filter(w => w.off !== w.y);
+    tips.push(`Our estimate matched the official Kalshi result in ${mk.length - miss.length} of ${mk.length} windows you marked.` +
+      (miss.length ? ` Misses happened when the average was within $${fmt(Math.max(...miss.map(w => Math.abs(w.avg - w.tgt))), 0)} of the target. Treat anything that close as a coin flip.` : ''));
+  } else if (log.length) tips.push('Tap the Official column to mark Kalshi\'s real result. The model then learns from real outcomes instead of its own estimate.');
+  $('insights').innerHTML = tips.map(x => `<li>${x}</li>`).join('');
 }
+document.addEventListener('click', e => {
+  const td = e.target.closest && e.target.closest('.offc'); if (!td) return;
+  const w = log[+td.dataset.i]; if (!w) return;
+  w.off = w.off == null ? 1 : w.off === 1 ? 0 : undefined;   // tap cycles: YES, NO, unmarked
+  if (w.off === undefined) delete w.off;
+  saveLog(); renderStats();
+});
 $('logCopy').addEventListener('click', async () => {
-  try { await navigator.clipboard.writeText(JSON.stringify(log)); $('logMsg').textContent = 'Copied'; } catch (e) { $('logMsg').textContent = 'Copy blocked'; }
+  const rows = ['close_utc,target,est_avg,est_result,official,checkpoint_s,p_yes,dist,vol_per_min'];
+  for (const w of log) for (const c of CKS) { const e = w.ck[c]; if (!e) continue;
+    rows.push([new Date(w.c * 1000).toISOString(), w.tgt, w.avg, w.y ? 'YES' : 'NO', w.off == null ? '' : w.off ? 'YES' : 'NO', c, e.p, e.d ?? '', e.v ?? ''].join(',')); }
+  try { await navigator.clipboard.writeText(rows.join('\n')); $('logMsg').textContent = 'Copied as CSV'; } catch (e) { $('logMsg').textContent = 'Copy blocked'; }
 });
 let clearArm = 0;
 $('logClear').addEventListener('click', () => {
@@ -425,7 +530,7 @@ function render() {
   $('volInfo').textContent = sig == null ? 'Measuring volatility (needs about 30 seconds)...'
     : `Based on distance from target, time left, and BTC moving about $${fmt(sig * Math.sqrt(60), 0)} per minute.`
       + (md ? ` Estimate error allowance ±$${fmt(md.err, 0)}${calT ? '' : ' (calibrate to tighten)'}.` : '')
-      + (tune.n >= 40 ? ` Tuned from ${tune.n} logged results (x${fmt(tune.k, 2)}).` : ` Self-tuning starts after 40 logged results (${tune.n} so far).`);
+      + (tune.all.n >= 40 ? ` Tuned from ${tune.all.n} logged results (x${fmt(md ? md.k : tune.all.k, 2)}).` : ` Self-tuning starts after 40 logged results (${tune.all.n} so far).`);
 
   let calc = '';
   if (avg != null && target != null) {
